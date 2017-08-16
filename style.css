@@ -1,0 +1,43 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: sans-serif;
+}
+
+.input-area {
+    width: 100%;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+.input-area__numbers {
+    width: 18%;
+    padding: 10px 5px;
+    font-size: 20px;
+    text-align: center;
+}
+.input-area__button {
+    width: 18%;
+    padding: 10px 5px;
+    font-size: 20px;
+    border-radius: 0;
+    height: 50px;
+}
+
+.result {
+    padding: 0 10px;
+}
+.result__textbox{
+    width: 100%;
+    font-size: 20px;
+}
+h1 {
+    text-align: center;
+    font-size: 24px;
+    width: 100%;
+    background-color: coral;
+    color: white;
+    margin-bottom: 10px;
+}
