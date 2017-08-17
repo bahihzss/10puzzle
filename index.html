@@ -6,19 +6,21 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>10パズル　解答プログラム</title>
     <link rel="stylesheet" href="./style.css">
+    <script src="./script.js"></script>
 </head>
 <body>
-<h1>10Puzzle</h1>
-<form onSubmit="return exec(event);"  class="input-area">
-    <input type="text" type="number" pattern="\d*" class="input-area__numbers" id="n1" min="0" max="9" required>
-    <input type="text" type="number" pattern="\d*" class="input-area__numbers" id="n2" min="0" max="9" required>
-    <input type="text" type="number" pattern="\d*" class="input-area__numbers" id="n3" min="0" max="9" required>
-    <input type="text" type="number" pattern="\d*" class="input-area__numbers" id="n4" min="0" max="9" required>
-    <button class="input-area__button" type="submit">OK</button>
-</form>
-<div class="result">
-    <textarea name="result" id="result" class="result__textbox" cols="30" rows="10" readonly></textarea>
+<div id="container">
+    <h1>10Puzzle</h1>
+    <div id="input-area">
+        <input type="number" pattern="\d" class="number" id="n1">
+        <input type="number" pattern="\d" class="number" id="n2">
+        <input type="number" pattern="\d" class="number" id="n3">
+        <input type="number" pattern="\d" class="number" id="n4">
+        <button id="okButton" type="button">OK</button>
+    </div>
+    <div id="result">
+        ここに結果が表示されます
+    </div>
 </div>
-<script src="./script.js"></script>
 </body>
 </html>

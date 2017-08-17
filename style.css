@@ -3,41 +3,59 @@
     margin: 0;
     box-sizing: border-box;
 }
+
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: sans-serif;
 }
 
-.input-area {
+#container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#input-area {
     width: 100%;
     padding: 0 10px;
     margin-bottom: 10px;
+    display: flex;
 }
-.input-area__numbers {
-    width: 18%;
+.number {
+    width: calc(20% - 5px);
+    height: 50px;
+    margin-right: 5px;
     padding: 10px 5px;
     font-size: 20px;
     text-align: center;
 }
-.input-area__button {
-    width: 18%;
+#okButton {
+    width: 20%;
     padding: 10px 5px;
     font-size: 20px;
     border-radius: 0;
     height: 50px;
 }
 
-.result {
-    padding: 0 10px;
-}
-.result__textbox{
+#result {
+    padding: 10px;
+    flex-grow: 1;
+    border: 1px #666 solid;
+    height: calc(100% - 114px);
     width: 100%;
     font-size: 20px;
+    overflow-y: auto;
+    background: white;
 }
+
 h1 {
     text-align: center;
     font-size: 24px;
     width: 100%;
-    background-color: coral;
+    background-color: #FF4500;
     color: white;
     margin-bottom: 10px;
 }

@@ -1,142 +1,267 @@
-const plus = function(a, b) {
-    return "(" + a + "+" + b + ")";
-}
+window.onload = () => { // ウィンドウの読み込み完了時に以下の処理を行う
 
-const minus = function(a, b) {
-    return "(" + a + "-" + b + ")";
-}
+    /**
+     * InputのID一覧
+     * @type {Array.<string>}
+     */
+    const inputIds = ['n1', 'n2', 'n3', 'n4'];
 
-const multiply = function(a, b) {
-    return a  + "*" + b;
-}
+    /**
+     * 演算子一覧
+     * @type {Array.<string>}
+     */
+    const operator = ['+', '-', '*', '/'];
 
-const divide = function(a, b) {
-    if(a !== 0 && b !== 0) return a  + "/" + b;
-    else return "null";
-}
-const operates = {plus, minus, multiply, divide};
+    // OKボタン押下時のイベントを登録
+    document.getElementById('okButton').addEventListener('click', calc);
+    
+    // inputへ数値入力時の挙動をイベント登録
+    inputIds.map(id =>
+        document.getElementById(id).addEventListener('keydown', input)
+    );
 
-const exec = function(e) {
-    let n1, n2, n3, n4, result;
-    let numbersList = {}
-    n1 = parseInt(document.getElementById('n1').value);
-    n2 = parseInt(document.getElementById('n2').value);
-    n3 = parseInt(document.getElementById('n3').value);
-    n4 = parseInt(document.getElementById('n4').value);
-    if (!(n1 && n2 && n3 && n4)) return;
-    numbersList = getNumbersList([n1, n2, n3, n4]);
+    /**
+     * 数値入力におけるキーボード押下時の処理
+     * 一桁の自然数以外を入力できないように制限
+     * 
+     * @param {Object} event
+     */
+    function input(event) {
+        /**
+         * 押下されたキー
+         * @type {string}
+         */
+        const key = event.key;
+        
+        // 押したキーが数字キーならinputの値にする
+        if (key.match(/\d/)) event.target.value = key;
 
-    result = objMap(numbersList, numbers => calc(numbers));
-    message = format(result);
+        // 押したキーが特殊キー(TabとかEnterとか)でないならこれより後のEventを止める 
+        if (key.length === 1) event.preventDefault(); 
 
-    document.getElementById('result').value = message;
-    console.log(result);
-    return false;
-}
-
-const getNumbersList = function(numbers) {
-    let result = {};
-    getAssortment(numbers, numbers.length).map(numbers => result['[' + numbers.join(',') + ']'] = numbers);
-    return result;
-}
-
-const getAssortment = function(numbers, count){
-    let arrays, i, j, length, results, parts;
-    arrays = [];
-    length = numbers.length;
-    if(length < count){
-        return;
-    } else if(count == 1){
-        for(i = 0; i < length; i ++){
-            arrays[i] = [numbers[i]];
-        }
-    } else {
-        for(i = 0; i < length; i ++){
-            parts = numbers.slice(0);
-            parts.splice(i, 1)[0];
-            results = getAssortment(parts, count - 1);
-            for(j = 0; j < results.length; j ++){
-                arrays.push([numbers[i]].concat(results[j]));
-            }
-        }
+        // 押したキーがEnterですべてのインプットが入力されているならば計算処理を行う
+        if (key === 'Enter' && isInputAll()) calc(); 
     }
-    return arrays;
-}
 
-const calc = function(numbers) {
-    let number = numbers.shift();
-    if (numbers.length === 0) return number;
-    else return objMap(evaluate(number, numbers[0]), (result, key) => {
-        let next = [].concat(numbers);
-        next[0] = result;
-        return calc(next);
-    });
-}
+    /**
+     * 与えられた文字列を結果欄に表示する
+     * 
+     * @param {string} message HTML可 
+     */
+    function output(message) {
+        document.getElementById('result').innerHTML = message;
+    }
 
-const format = function(result) {
-    let message, filtered;
-    let exception = {};
-    objMap(objFilter(objFlat(result), content => {console.log(content, content.match(/\([0-9]-[0-9]\)[*/]/));
-        return content.match(/\([0-9]-[0-9]\)[*/]/)}), (content, key) => {
-        exception[key+".ex"] = content.replace(/\([0-9]-[0-9]\)[*/][0-9]/, match => match.replace(')', '') + ')')
-    });
-    objMap(objFilter(objFlat(result), content => {console.log(content, content.match(/\([1-9]\//));
-        return content.match(/\([0-9]\/[0-9]-[0-9]\)[*/]/)}), (content, key) => {
-        exception[key+".ex2"] = content.replace(/\([0-9]\/[0-9]-[0-9]\)[*/][1-9]/, match => match.replace(')', '').replace(/\([1-9]\//, match => match.replace('(', '') + '(' ) + ')')
-    });
+    /**
+     * すべてのinputに値が入力されていればtrueされていなければfalseを返す
+     * 
+     * @return {boolean}
+     */
+    function isInputAll() {
+        return inputIds.reduce((result, id) =>
+            result && document.getElementById(id).value.length
+        , true);
+    }
 
-    filtered = objFilter(Object.assign({}, objFlat(result), exception), content => eval(content) === 10);
-    message = Object.keys(filtered).length + "件\n"
-    objMap(filtered, formula => message += formula + "\n");
+    /**
+     * 計算処理
+     * 
+     * @return {void}
+     */
+    function calc() {
+        if (!isInputAll()) return;
 
-    console.log(exception);
+        /**
+         * inputの値
+         * @type {Array.<number>}
+         */
+        const inputs = inputIds.map(id =>
+            parseInt(document.getElementById(id).value)
+        );
 
-    return messageFormat(message);
-}
+        /**
+         * 計算対象になる順列
+         * @type {Array.<Array.<number>>}
+         */
+        const numberList = getPermutation(inputs);
 
-const messageFormat = function(message) {
-    return message.replace(/\*/g, '×').replace(/\//g, '÷');
-}
+        /**
+         * 計算結果が10になる式（中置記法）
+         * @type {Array.string}
+         */
+        const result = [];
 
-const evaluate = function(a, b) {
-    return objMap(operates, (operate, key) => operate(a, b));
-}
+        // 数列一覧をループで回す
+        numberList.forEach(numbers => {
+            // 数列から考えられる式すべてをループで回す
+            getFormulaList(numbers).forEach(formula => {
+                // 式を評価して答えが10の場合は結果一覧に追加する
+                const answer = eval(formula);
+                if (answer === 10) result.push(formula);
+            });
+        });
 
-const objMap = function(obj, callback) {
-    let result = {}
-    Object.keys(obj).map(key => result[key] = callback(obj[key], key));
-    return result;
-}
+        const message = `${result.length}件<br>${result.join('<br>')}`;
+        // 結果を出力
+        output(message);
+    }
 
-const objFlat = function(obj) {
-    let result = {};
-    objMap(obj, (content, key) => {
-        if (classOf(content) === "hash") {
-            let flatObj = objFlat(content);
-            objMap(flatObj, (flatObjContent, flatObjKey) => {
-                result[key + '.' + flatObjKey] = flatObjContent;
-            })
-        } else {
-            result[key] = content;
+    /**
+     * 与えられた配列の要素の順列を返す（重複は取り除かれる）
+     * 
+     * @param {Array.<number>} numbers 
+     * @return {Array.<Array.<number>>}
+     */
+    function getPermutation(numbers) {
+        /**
+         * 数列の要素数
+         * @type {number}
+         */
+        const length = numbers.length;
+        // 与えられた配列の要素数が１つの場合
+        if (length === 1) return [numbers];
+
+        // 複数の要素をもつ配列を与えられた場合の処理
+        return numbers.reduce((result, n) => {
+            const next = [].concat(numbers);
+            next.splice(numbers.indexOf(n), 1);
+            getPermutation(next).forEach(progression => {
+                const item = [n].concat(progression);
+                if(!has(result, item)) result.push(item);
+            });
+            return result;
+        }, []);
+    }
+
+    /**
+     * 任意の数列に対してすべての式を返す
+     * 
+     * @param {Array.<number>} progression
+     * @return {Array.<string>} 
+     */
+    function getFormulaList(progression) {
+        /**
+         * 演算子の組み合わせ一覧
+         * @type {Array.<string>}
+         */
+        const operatorList = getOperatorList(progression.length - 1);
+        
+        /**
+         * 演算子の分布一覧
+         * @type {Array.<number>}
+         */
+        const formatList = getFormatList(progression.length);
+
+        /**
+         * 結果
+         * @type {Array.<string>}
+         */
+        const result = [];
+
+        // すべての演算子一覧をすべての分布一覧に照らし合わせて任意の数列に配置
+        operatorList.forEach(operators => {
+            formatList.forEach(format => {
+                let formula = [];
+                const ops = [].concat(operators);
+                format.forEach((n, i) => {
+                    const unit = [progression[i]];
+                    if (n) unit.push(ops.splice(0, n).join(' '));
+                    formula = formula.concat(unit);
+                    if (i === progression.length-1) {
+                        const infix = parseInfix(formula.join(' '));
+                        if (!has(result, infix)) result.push(infix);
+                    }
+                });
+            });
+        });
+
+        return result;
+    }
+
+    /**
+     * 演算子count個の組み合わせをすべて返す
+     * 
+     * @param {number} count 
+     */
+    function getOperatorList(count) {
+        if (count === 1) return operator.map(o => [o]);
+        return operator.reduce((r, o) => 
+            r.concat(getOperatorList(count-1).map(ol => [o].concat(ol)))
+        , []);
+    }
+
+    /**
+     * 演算子の分布一覧を返す
+     * 
+     * @param {number} length 値の数（４つ以上の数でも計算できる） 
+     * @return {Array.<number>}
+     */
+    function getFormatList(length, count = length-1, turn = 0) {
+        if (length === 1) return [[count]];
+        let result = [];
+        for(let i=0; i <= turn; ++i) {
+            if (i) --count;
+            if(count !== 0) getFormatList(length - 1, count, turn + 1).map(format => {
+                result.push([i].concat(format));
+            });
         }
-    });
-    return result;
-}
+        return result;
+    }
 
-const objFilter = function(obj, condition) {
-    let result = {};
-    objMap(obj, (content, key) => {
-        if (condition(content, key)) result[key] = content;
-    })
-    return result;
-}
+    /**
+     * 配列arrayが与えられた要素contentを持っているかを返す
+     * 配列の場合、内容が同じなら持っているとみなす
+     * 
+     * @param {Array} array 
+     * @param {*} content 
+     * @return {boolean}
+     */
+    function has(array, content) {
+        return array.reduce((result, item) => result || equal(item, content), false);
+    }
 
-const classOf = function(obj){
-    if((typeof obj)=="object"){
-        if(obj.length!=undefined)return "array";
-        else{for(t in obj){
-            if(obj[t]!=undefined)return "hash";
-            else return "object";
-        }}
-    }else return (typeof obj);
-}
+    /**
+     * 変数や配列の内容が同じかを検証する
+     * 
+     * @param {Array} a 
+     * @param {Array} b 
+     */
+    function equal(a, b) {
+        // 同じ配列を参照している場合（Jacascriptのオブジェクト・配列は参照渡しであるため）
+        if (a === b) return true;
+        // いずれかがnullである場合はfalse
+        if (a == null || b == null) return false;
+        // 要素数が一致しない場合もfalse
+        if (a.length != b.length) return false;
+      
+        for (let i = 0; i < a.length; ++i) {
+          if (a[i] !== b[i]) return false;
+        }
+        return true;
+    }
+
+    /**
+     * 逆ポーランド記法の計算式を中置記法に変換する
+     * 
+     * @param {string} formula
+     * @return {string}
+     */
+    function parseInfix(formula) {
+        return formula.split(' ').reduce((s, v) => {
+            // 値が演算子でなければスタックに積む
+            if (!has(operator, v)) return [v].concat(s);
+            else {
+                // 直前の１つ前にスタックに積まれた値を取り出す（演算子が掛け割の場合は括弧を付加）
+                const a = (has(['*', '/'], v) && s[1].match(/[+-]/)) ?
+                    `(${s.splice(1, 1)})` 
+                    : s.splice(1, 1);
+                // 直前にスタックに積まれた値を取り出す（演算子が掛け割の場合は括弧を付加）
+                const b = (has(['*', '/'], v) && s[0].match(/[+-]/)) ?
+                    `(${s.splice(0, 1)})` 
+                    : s.splice(0, 1);
+                // 中置記法に並び替えてスタックに積む
+                return [`${a}${v}${b}`].concat(s);
+            }
+        }, [])[0];
+    }
+};
